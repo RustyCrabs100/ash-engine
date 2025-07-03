@@ -1,0 +1,13 @@
+[package]
+name = "ash-engine"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ash = { version = "0.38.0", optional = true, features = ["debug", "loaded", "std"]}
+async-winit = "0.2.1"
+
+[features]
+default = ["vulkan"]
+vulkan = ["dep:ash"]
+debug = []
