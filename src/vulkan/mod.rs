@@ -14,7 +14,6 @@ pub mod vulkan {
     use crate::vulkan::instance::InstanceHandling;
     #[cfg(feature = "debug")]
     use crate::vulkan::debug::VulkanDebug::VulkanDebugMessage::VulkanDebugAllocationMessenger::allocation_callback;
-    #[cfg_attr(feature = "debug", derive(Debug))]
     pub struct VulkanInit<'a> {
         entry: Arc<Entry>,
         instance: Arc<Instance>,
