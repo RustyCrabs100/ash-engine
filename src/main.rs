@@ -1,8 +1,6 @@
-pub(crate) mod Vulkan;
-pub(crate) mod vulkan;
-pub(crate) mod utilities;
+mod vulkan;
+mod utilities;
 
 fn main() {
-    Vulkan::Vulkan::VulkanInit::vulkan_init();
-    println!("Hello, world!");
+    vulkan::Vulkan::VulkanInit::vulkan_init();
 }

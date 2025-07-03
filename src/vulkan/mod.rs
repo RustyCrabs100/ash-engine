@@ -1,6 +1,6 @@
 
 
-
+#[path ="debug.rs"]
 pub(crate) mod debug;
 
 #[cfg(feature = "vulkan")]
@@ -30,6 +30,7 @@ pub mod Vulkan {
                 instance, 
                 allocation_callbacks
             };
+            println!("Working!")
         }
 
         fn create_vk_instance(entry: &Entry) -> Arc<Instance> {
