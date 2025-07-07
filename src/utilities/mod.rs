@@ -1,5 +1,5 @@
 pub mod utils {
-    
+
     // Returns a c_char array
     #[macro_export]
     macro_rules! c_char_array {

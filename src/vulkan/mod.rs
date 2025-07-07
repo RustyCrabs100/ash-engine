@@ -1,39 +1,65 @@
-
-
-#[path ="debug.rs"]
+#[path = "debug.rs"]
 pub(crate) mod debug;
 #[path = "instance.rs"]
 pub(crate) mod instance;
 
-#[cfg(feature = "vulkan")]
 pub mod vulkan {
+
     use ash::*;
-    
+
     use std::sync::Arc;
 
-    use crate::vulkan::instance::InstanceHandling;
     #[cfg(feature = "debug")]
     use crate::vulkan::debug::VulkanDebug::VulkanDebugMessage::VulkanDebugAllocationMessenger::allocation_callback;
+    use crate::vulkan::instance::InstanceHandling;
     pub struct VulkanInit<'a> {
         entry: Arc<Entry>,
         instance: Arc<Instance>,
-        allocation_callbacks: Arc<Option<vk::AllocationCallbacks<'a>>>,
+        allocation_callbacks: Arc<Option<&'a vk::AllocationCallbacks<'a>>>,
     }
 
     impl VulkanInit<'_> {
-        pub fn vulkan_init() {
+        pub fn new() -> Result<Self, vk::Result> {
+            // Dynamically Load in Vulkan Entry Points
             let entry = Arc::new(unsafe { Entry::load().expect("Failed to load Entry Points") });
-            let instance = InstanceHandling::create_vk_instance(&entry);
-            #[cfg(feature = "debug")]
-            let allocation_callbacks = Arc::new(Some(allocation_callback()));
-            #[cfg(not(feature = "debug"))]
-            let allocation_callbacks = Arc::new(None);
-            Self { 
-                entry, 
-                instance, 
-                allocation_callbacks
+            // Enable Allocation Callbacks IF Debugging is enabled
+            let allocation_callbacks = {
+                #[cfg(feature = "debug")]
+                {
+                    // This is done since my AllocationCallback Struct causes my computer to run out of memory...
+                    Arc::new(None)
+                    // Arc::new(Some(allocation_callback()))
+                }
+                #[cfg(not(feature = "debug"))]
+                {
+                    Arc::new(None)
+                }
             };
-            println!("Working!")
+            let inst_layer_items: (Vec<vk::LayerProperties>, usize) =
+                match InstanceHandling::get_layers(&entry) {
+                    Some(layers) => layers,
+                    None => (Vec::new(), 0),
+                };
+            let inst_extension_items: (Vec<vk::ExtensionProperties>, usize) =
+                match InstanceHandling::get_extensions(&entry) {
+                    Some(extensions) => extensions,
+                    None => (Vec::new(), 0),
+                };
+            let instance = InstanceHandling::create_vk_instance(
+                &entry,
+                inst_layer_items,
+                inst_extension_items,
+                *allocation_callbacks,
+            );
+            Ok(Self {
+                entry,
+                instance,
+                allocation_callbacks,
+            })
+        }
+
+        unsafe fn clean_up(self) {
+            self.instance.destroy_instance(*self.allocation_callbacks);
         }
     }
 }

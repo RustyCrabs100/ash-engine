@@ -1,7 +1,6 @@
-
 pub(crate) mod VulkanDebug {
     const VALIDATION: bool = true;
-    
+
     pub(crate) mod VulkanDebugMessage {
         pub(crate) mod VulkanDebugAllocationMessenger {
             use ash::vk;
@@ -19,14 +18,12 @@ pub(crate) mod VulkanDebug {
                 }
             }
 
-            
-
             pub(crate) mod VulkanDebugAllocationMessengerFunctions {
-                use core::ffi::{c_char, c_void};
                 use ash::vk;
-                use core::ptr::{null_mut, copy_nonoverlapping};
+                use core::ffi::{c_char, c_void};
+                use core::ptr::{copy_nonoverlapping, null_mut};
                 use std::alloc;
-                use std::cmp;                    
+                use std::cmp;
 
                 const MAX_ALLOC_SIZE: usize = 16 * 1024 * 1024 * 1024;
 
@@ -40,20 +37,28 @@ pub(crate) mod VulkanDebug {
                     _p_user_data: *mut c_void,
                     size_alloc: usize,
                     alignment_alloc: usize,
-                    _scope: vk::SystemAllocationScope
+                    _scope: vk::SystemAllocationScope,
                 ) -> *mut c_void {
                     // Checks if Invalid Allocation was made
-                    if size_alloc == 0 || alignment_alloc == 0 || !alignment_alloc.is_power_of_two() || size_alloc > MAX_ALLOC_SIZE {
+                    if size_alloc == 0
+                        || alignment_alloc == 0
+                        || !alignment_alloc.is_power_of_two()
+                        || size_alloc > MAX_ALLOC_SIZE
+                    {
                         eprintln!("Vulkan Attempted Over-allocation OR Invalid Allocation");
                         return null_mut();
                     }
 
-                    println!("Allocationg {} bytes with {} alignment", size_alloc, alignment_alloc);
+                    println!(
+                        "Allocationg {} bytes with {} alignment",
+                        size_alloc, alignment_alloc
+                    );
 
                     // Creates Allocation Meta-data for safe Freeing
                     let header = alloc::Layout::new::<AllocationInfo>();
                     // Creates Memory Layout for Vulkan
-                    let mem_layout = alloc::Layout::from_size_align(size_alloc, alignment_alloc).unwrap();
+                    let mem_layout =
+                        alloc::Layout::from_size_align(size_alloc, alignment_alloc).unwrap();
                     // Initalizes Meta-data
                     let (layout, offset) = header.extend(mem_layout).unwrap();
 
@@ -81,22 +86,23 @@ pub(crate) mod VulkanDebug {
                     p_original: *mut c_void,
                     size_realloc: usize,
                     alignment_realloc: usize,
-                    _scope: vk::SystemAllocationScope
+                    _scope: vk::SystemAllocationScope,
                 ) -> *mut c_void {
                     // Checks if Invalid Reallocation was made
-                    if size_realloc == 0 || alignment_realloc == 0 || !alignment_realloc.is_power_of_two() || size_realloc < MAX_ALLOC_SIZE {
-                        eprintln!("Vulkan Attempted Over-reallocation OR Invalid Reallocation (   ");
+                    if size_realloc == 0
+                        || alignment_realloc == 0
+                        || !alignment_realloc.is_power_of_two()
+                        || size_realloc < MAX_ALLOC_SIZE
+                    {
+                        eprintln!(
+                            "Vulkan Attempted Over-reallocation OR Invalid Reallocation (   "
+                        );
                         return null_mut();
                     }
 
-                    // Checks if Reallocation is Null 
+                    // Checks if Reallocation is Null
                     if p_original.is_null() {
-                        return allocation(
-                            _p_user_data,
-                            size_realloc,
-                            alignment_realloc,
-                            _scope
-                        );
+                        return allocation(_p_user_data, size_realloc, alignment_realloc, _scope);
                     }
 
                     println!("Reallocating {} bytes of memory", size_realloc);
@@ -108,9 +114,10 @@ pub(crate) mod VulkanDebug {
                     let offset = metadata_layout.size();
 
                     // Gets the old AllocationInfo
-                    let old_alloc_info = unsafe { (p_original as *mut u8).sub(offset) as *mut AllocationInfo };
+                    let old_alloc_info =
+                        unsafe { (p_original as *mut u8).sub(offset) as *mut AllocationInfo };
 
-                     // Gets the old Allocation Size
+                    // Gets the old Allocation Size
                     let old_alloc_size = unsafe { (*old_alloc_info).size };
 
                     // Recreate Memory
@@ -125,14 +132,21 @@ pub(crate) mod VulkanDebug {
                     let min_mem_size = cmp::min(size_realloc, old_alloc_size);
 
                     unsafe {
-                        copy_nonoverlapping(p_original as *const u8, new_mem as *mut u8, min_mem_size);
+                        copy_nonoverlapping(
+                            p_original as *const u8,
+                            new_mem as *mut u8,
+                            min_mem_size,
+                        );
                         free(_p_user_data, p_original);
                     }
 
                     new_mem
                 }
 
-                pub(crate) extern "system" fn free(_p_user_data: *mut c_void, p_memory: *mut c_void) {
+                pub(crate) extern "system" fn free(
+                    _p_user_data: *mut c_void,
+                    p_memory: *mut c_void,
+                ) {
                     // println!("Freeing {:?} memory", p_memory);
                     if p_memory.is_null() {
                         eprintln!("Vulkan attempted to free 0 bytes of memory");
@@ -146,9 +160,10 @@ pub(crate) mod VulkanDebug {
                     let offset = alloc_layout_uninit.size();
 
                     unsafe {
-                    // Get memory metadata
-                        let alloc_ptr: *mut AllocationInfo =
-                        (p_memory as *mut u8).sub(alloc_layout_uninit.size()) as *mut AllocationInfo;
+                        // Get memory metadata
+                        let alloc_ptr: *mut AllocationInfo = (p_memory as *mut u8)
+                            .sub(alloc_layout_uninit.size())
+                            as *mut AllocationInfo;
 
                         // Gets memory size
                         let alloc_size: usize = (*alloc_ptr).size;
@@ -171,12 +186,13 @@ pub(crate) mod VulkanDebug {
                         }
                         // Gets proper memory
                         let alloc_layout =
-                            alloc::Layout::from_size_align(alloc_size, alloc_alignment).unwrap_or_else(|_| {
-                                panic!(
-                                    "Invalid layout: size = {}, alignment = {}",
-                                    alloc_size, alloc_alignment
-                                )
-                            });
+                            alloc::Layout::from_size_align(alloc_size, alloc_alignment)
+                                .unwrap_or_else(|_| {
+                                    panic!(
+                                        "Invalid layout: size = {}, alignment = {}",
+                                        alloc_size, alloc_alignment
+                                    )
+                                });
 
                         let (layout, _offset) = alloc_layout_uninit.extend(alloc_layout).unwrap();
 
@@ -184,8 +200,6 @@ pub(crate) mod VulkanDebug {
                     }
                 }
             }
-
         }
     }
-    
 }

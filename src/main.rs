@@ -1,6 +1,7 @@
-mod vulkan;
 mod utilities;
+pub(crate) mod vulkan;
+
 
 fn main() {
-    vulkan::vulkan::VulkanInit::vulkan_init();
+    let vulkan_setup_items = vulkan::vulkan::VulkanInit::new();
 }
