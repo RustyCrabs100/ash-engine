@@ -4,13 +4,12 @@ pub(crate) mod debug;
 pub(crate) mod instance;
 
 pub mod vulkan {
-
     use ash::*;
-
     use std::sync::Arc;
 
     #[cfg(feature = "debug")]
     use crate::vulkan::debug::VulkanDebug::VulkanDebugMessage::VulkanDebugAllocationMessenger::allocation_callback;
+    
     use crate::vulkan::instance::InstanceHandling;
     pub struct VulkanInit<'a> {
         entry: Arc<Entry>,
@@ -21,7 +20,7 @@ pub mod vulkan {
     impl VulkanInit<'_> {
         pub fn new() -> Result<Self, vk::Result> {
             // Dynamically Load in Vulkan Entry Points
-            let entry = Arc::new(unsafe { Entry::load().expect("Failed to load Entry Points") });
+            let entry = Arc::new(unsafe { Entry::load()? });
             // Enable Allocation Callbacks IF Debugging is enabled
             let allocation_callbacks = {
                 #[cfg(feature = "debug")]
@@ -58,8 +57,10 @@ pub mod vulkan {
             })
         }
 
-        unsafe fn clean_up(self) {
-            self.instance.destroy_instance(*self.allocation_callbacks);
+        pub fn clean_up(self) {
+            unsafe {
+               self.instance.destroy_instance(*self.allocation_callbacks); 
+            }
         }
     }
 }
