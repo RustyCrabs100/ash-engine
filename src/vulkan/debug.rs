@@ -1,7 +1,28 @@
 pub(crate) mod VulkanDebug {
-    const VALIDATION: bool = true;
+    const fn debug_mode() -> bool {
+        #[cfg(debug_assertions)] {
+            return true;
+        }
+        return false;
+    }
+    
+    const VALIDATION: bool = debug_mode();
+
+    pub(crate) fn check_validation(inst_layers: &[ash::vk::LayerProperties]) -> bool {
+        for layers in inst_layers {
+            if layers.layer_name == c_char_array!(b"VK_LAYER_KHRONOS_validation") {
+                return true;
+            }
+        }
+        false
+    } 
 
     pub(crate) mod VulkanDebugMessage {
+
+        pub(crate) extern "system" fn debug_callbacks(
+            
+        ) -> ash::vk::Bool32 { todo!() }
+        
         pub(crate) mod VulkanDebugAllocationMessenger {
             use ash::vk;
 
