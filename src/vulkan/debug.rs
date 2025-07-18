@@ -1,4 +1,6 @@
 pub(crate) mod VulkanDebug {
+    use crate::c_char_array;
+
     const fn debug_mode() -> bool {
         #[cfg(debug_assertions)] {
             return true;
