@@ -18,7 +18,7 @@ pub mod vulkan {
     }
 
     impl VulkanInit<'_> {
-        pub(crate) fn new() -> Result<Self, std::box::Box<dyn std::error::Error>> {
+        pub(crate) fn new() -> Result<Self, Box<&dyn std::error::Error>> {
             // Dynamically Load in Vulkan Entry Points
             let entry = Arc::new(unsafe { Entry::load()? });
             // Enable Allocation Callbacks IF Debugging is enabled
